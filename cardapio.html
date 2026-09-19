@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Cardápio — Vangust Burguer Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/footer.css">
+</head>
+<body>
+<div class="app-shell">
+    <div id="sidebar-placeholder"></div>
+
+    <div class="main-content">
+        <div id="header-placeholder"></div>
+
+        <div class="page-body">
+            <div class="card-header-row">
+                <div>
+                    <h1 class="page-title">Cardápio</h1>
+                    <p class="page-subtitle">Gerencie os produtos exibidos no app do cliente.</p>
+                </div>
+                <button class="btn btn-primary" onclick="abrirModalNovo()"><i class="fa-solid fa-plus"></i> Novo produto</button>
+            </div>
+
+            <div class="card-box">
+                <div class="table-wrap">
+                    <table class="vg-table">
+                        <thead>
+                            <tr><th>Produto</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Status</th><th></th></tr>
+                        </thead>
+                        <tbody id="tbodyProdutos"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="footer-placeholder"></div>
+    </div>
+</div>
+
+<!-- Modal Novo/Editar Produto -->
+<div class="modal-overlay" id="modalProduto">
+    <div class="modal-box">
+        <h3 id="modalTitulo">Novo produto</h3>
+        <form id="formProduto">
+            <input type="hidden" id="f_id_produto">
+
+            <div class="form-group">
+                <label>Foto do Produto</label>
+                <input type="file" id="f_imagem" accept="image/*">
+            </div>
+
+            <div class="form-group">
+                <label>Nome</label>
+                <input type="text" id="f_nome" required>
+            </div>
+            <div class="form-group">
+                <label>Descrição</label>
+                <textarea id="f_descricao" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Categoria</label>
+                <input type="text" id="f_categoria" placeholder="Ex: Combos, Ofertas, Opções veganas" required>
+            </div>
+            <div class="form-group">
+                <label>Preço (R$)</label>
+                <input type="text" id="f_preco" placeholder="Ex: 29,90" required>
+            </div>
+            <div class="form-group">
+                <label>Estoque</label>
+                <input type="number" id="f_estoque" min="0" value="0" required>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="js/store.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/layout.js"></script>
+<script>
+    VangustAuth.exigirLogin();
+    VangustLayout.montar('cardapio.html');
+
+    // 1. Função para carregar os produtos reais da base de dados via API
+    async function renderizarProdutos() {
+        const tbody = document.getElementById('tbodyProdutos');
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">A carregar produtos...</td></tr>';
+
+        try {
+            const resposta = await fetch('http://localhost/api_hamburgueria/produtos.php'); 
+            const produtos = await resposta.json();
+
+            tbody.innerHTML = produtos.length ? produtos.map(p => `
+                <tr>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            ${p.imagem ? `<img src="${p.imagem}" style="width:40px; height:40px; border-radius:8px; object-fit:cover;">` : `<div style="width:40px; height:40px; background:#eee; border-radius:8px;"></div>`}
+                            <div>
+                                <strong>${p.nome_produto}</strong><br>
+                                <span style="color:var(--vg-text-light);font-size:12px;">${p.descricao || ''}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${p.categoria}</td>
+                    <td>R$ ${parseFloat(p.preco).toFixed(2).replace('.', ',')}</td>
+                    <td>Estoque web</td>
+                    <td>
+                        <a href="#" class="badge badge-entregue">Ativo</a>
+                    </td>
+                    <td style="white-space:nowrap;">
+                        <button class="btn btn-outline btn-sm" onclick='abrirModalEditar(${JSON.stringify(p)})'><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-danger btn-sm" onclick="excluirProduto(${p.id_produto})"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('') : `<tr><td colspan="6" class="empty-state">Nenhum produto cadastrado ainda.</td></tr>`;
+        } catch (erro) {
+            console.error("Erro ao carregar produtos:", erro);
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Erro ao ligar à base de dados. Verifique o XAMPP.</td></tr>`;
+        }
+    }
+
+    function abrirModalNovo() {
+        document.getElementById('modalTitulo').textContent = 'Novo produto';
+        document.getElementById('f_id_produto').value = '';
+        if(document.getElementById('f_imagem')) document.getElementById('f_imagem').value = '';
+        document.getElementById('f_nome').value = '';
+        document.getElementById('f_descricao').value = '';
+        document.getElementById('f_categoria').value = '';
+        document.getElementById('f_preco').value = '';
+        document.getElementById('f_estoque').value = 0;
+        document.getElementById('modalProduto').classList.add('active');
+    }
+
+    function abrirModalEditar(p) {
+        document.getElementById('modalTitulo').textContent = 'Editar produto';
+        document.getElementById('f_id_produto').value = p.id_produto;
+        document.getElementById('f_nome').value = p.nome_produto;
+        document.getElementById('f_descricao').value = p.descricao;
+        document.getElementById('f_categoria').value = p.categoria;
+        document.getElementById('f_preco').value = String(p.preco).replace('.', ',');
+        document.getElementById('modalProduto').classList.add('active');
+    }
+
+    function fecharModal() {
+        document.getElementById('modalProduto').classList.remove('active');
+    }
+
+    async function excluirProduto(id) {
+    if (!confirm('Tem certeza de que deseja remover este produto do cardápio?')) return;
+
+    const formData = new FormData();
+    formData.append('id', id);
+
+    try {
+        const resposta = await fetch('http://localhost/api_hamburgueria/excluir_produto.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (resposta.ok) {
+            mostrarToast('Produto removido com sucesso.');
+            renderizarProdutos(); // Atualiza a tabela imediatamente
+        } else {
+            const resultado = await resposta.json().catch(() => ({}));
+            alert('Erro ao excluir: ' + (resultado.erro || 'Erro desconhecido no servidor'));
+        }
+    } catch (erro) {
+        alert('Erro ao conectar com a API para exclusão.');
+        console.error(erro);
+    }
+}
+
+    // 2. Envio do formulário para salvar o produto e a imagem na API
+    document.getElementById('formProduto').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const preco = parseFloat(document.getElementById('f_preco').value.replace(',', '.'));
+
+        const formData = new FormData();
+        formData.append('nome_produto', document.getElementById('f_nome').value.trim());
+        formData.append('descricao', document.getElementById('f_descricao').value.trim());
+        formData.append('categoria', document.getElementById('f_categoria').value.trim());
+        formData.append('preco', preco);
+        
+        const inputImagem = document.getElementById('f_imagem');
+        if (inputImagem && inputImagem.files.length > 0) {
+            formData.append('foto', inputImagem.files[0]);
+        }
+
+        try {
+            const resposta = await fetch('http://localhost/api_hamburgueria/salvar_produto.php', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (resposta.ok) {
+                fecharModal();
+                alert('Produto cadastrado com sucesso!');
+                renderizarProdutos(); // Atualiza a tabela imediatamente na tela
+            } else {
+                const erroData = await resposta.json();
+                alert('Erro ao salvar: ' + (erroData.erro || 'Erro desconhecido'));
+            }
+        } catch (erro) {
+            alert('Erro ao conectar com a API.');
+            console.error(erro);
+        }
+    });
+
+    // Carrega a listagem assim que a página abre
+    renderizarProdutos();
+</script>
+</body>
+</html>
