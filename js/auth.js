@@ -3,9 +3,14 @@ const VangustAuth = (() => {
     const DADOS_USUARIO = 'vangust_admin_dados';
 
     async function login(email, senha) {
+
+        console.log("EMAIL RECEBIDO:", email);
+        console.log("SENHA RECEBIDA:", senha);
+
         const formData = new FormData();
         formData.append('email', email);
         formData.append('senha', senha);
+
 
         try {
             const resposta = await fetch('http://localhost/api_hamburgueria/login.php', {
