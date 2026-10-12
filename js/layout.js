@@ -5,7 +5,8 @@ const VangustLayout = (() => {
     { pagina: 'cardapio.html', icone: 'fa-burger', label: 'Cardápio' },
     { pagina: 'clientes.html', icone: 'fa-users', label: 'Clientes' },
     { pagina: 'entregadores.html', icone: 'fa-motorcycle', label: 'Entregadores' },
-    { pagina: 'cupons.html', icone: 'fa-ticket', label: 'Cupons' }, // <--- ADICIONADO AQUI
+    { pagina: 'funcionarios.html', icone: 'fa-user-shield', label: 'Funcionários' }, // <--- ADICIONADO AQUI
+    { pagina: 'cupons.html', icone: 'fa-ticket', label: 'Cupons' },
 ];
 
     function renderSidebar(paginaAtual) {
@@ -30,9 +31,12 @@ const VangustLayout = (() => {
 
     function renderHeader() {
         const usuario = VangustAuth.getUsuarioLogado();
-        const inicial = usuario.nome.charAt(0).toUpperCase();
-        const avatarHtml = usuario.foto
-            ? `<img src="${usuario.foto}" alt="${usuario.nome}" class="topbar-avatar" style="object-fit:cover;">`
+        const inicial = usuario && usuario.nome ? usuario.nome.charAt(0).toUpperCase() : 'U';
+        const nomeUsuario = usuario && usuario.nome ? usuario.nome : 'Utilizador';
+        const cargoUsuario = usuario && usuario.cargo ? usuario.cargo : 'Funcionário'; // <--- Lê dinamicamente o cargo
+        
+        const avatarHtml = usuario && usuario.foto
+            ? `<img src="${usuario.foto}" alt="${nomeUsuario}" class="topbar-avatar" style="object-fit:cover;">`
             : `<div class="topbar-avatar">${inicial}</div>`;
         return `
             <header class="topbar">
@@ -44,8 +48,8 @@ const VangustLayout = (() => {
                     <a href="perfil.html" class="topbar-user" style="cursor:pointer;">
                         ${avatarHtml}
                         <div class="topbar-user-info">
-                            <strong>${usuario.nome}</strong>
-                            <span>Administrador</span>
+                            <strong>${nomeUsuario}</strong>
+                            <span>${cargoUsuario}</span>
                         </div>
                     </a>
                 </div>

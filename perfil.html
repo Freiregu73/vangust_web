@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="css/header.css">
     <link rel="stylesheet" href="css/footer.css">
     <link rel="stylesheet" href="css/perfil.css">
-    
 </head>
 <body>
 <div class="app-shell">
@@ -21,7 +20,7 @@
 
         <div class="page-body">
             <h1 class="page-title">Meu Perfil</h1>
-            <p class="page-subtitle">Visualize e gerencie seus dados de administrador.</p>
+            <p class="page-subtitle">Visualize e gerencie seus dados.</p>
 
             <div id="mensagemSucesso" class="alert alert-success" style="max-width:460px;margin:0 auto 18px;display:none;">
                 Dados atualizados com sucesso.
@@ -37,7 +36,7 @@
                     </div>
                     <div class="perfil-nome">
                         <span id="viewNome"></span>
-                        <i class="fa-solid fa-circle-check" title="Administrador verificado"></i>
+                        <i class="fa-solid fa-circle-check" title="Funcionário verificado"></i>
                     </div>
                     <p class="perfil-email" id="viewEmail"></p>
 
@@ -46,7 +45,10 @@
                     <div class="perfil-info-list">
                         <div class="perfil-info-row">
                             <span class="label">Cargo:</span>
-                            <span class="valor"><i class="fa-solid fa-user-shield" style="color:var(--vg-brown-light);"></i> Administrador</span>
+                            <span class="valor">
+                                <i class="fa-solid fa-user-shield" style="color:var(--vg-brown-light);"></i> 
+                                <span id="textoCargo">Funcionário</span>
+                            </span>
                         </div>
                         <div class="perfil-info-row">
                             <span class="label">E-mail:</span>
@@ -139,9 +141,14 @@
         document.getElementById('viewNome').textContent = usuario.nome;
         document.getElementById('viewEmail').textContent = usuario.email;
         document.getElementById('viewEmailRow').textContent = usuario.email;
+        
+        // Exibe o cargo real guardado no objeto do utilizador logado
+        const cargoAtual = usuario.cargo ? usuario.cargo : 'Funcionário';
+        document.getElementById('textoCargo').textContent = cargoAtual;
+
         preencherAvatar('viewAvatar', usuario);
 
-        // Modo edição (campos)
+        // Modo edição
         document.getElementById('f_nome').value = usuario.nome;
         document.getElementById('f_email').value = usuario.email;
         document.getElementById('f_senha').value = '';
@@ -208,7 +215,7 @@
             const resultado = await resposta.json();
 
             if (resposta.ok && resultado.sucesso) {
-                // Atualiza os dados na sessão do navegador
+                // Mantém o cargo existente ao atualizar a sessão
                 const dadosAtualizados = { ...usuarioAtual, nome, email };
                 sessionStorage.setItem('vangust_admin_dados', JSON.stringify(dadosAtualizados));
 
@@ -221,8 +228,6 @@
                 setTimeout(() => msg.style.display = 'none', 3000);
 
                 mostrarToast('Perfil atualizado com sucesso.');
-
-                // Atualiza o layout (cabeçalho) para refletir o novo nome imediatamente
                 VangustLayout.montar('perfil.html');
             } else {
                 alert('Erro ao atualizar: ' + (resultado.erro || 'Erro desconhecido'));
