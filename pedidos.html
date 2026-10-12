@@ -37,7 +37,7 @@
                             <tr>
                                 <th>#</th>
                                 <th>Cliente / Endereço</th>
-                                <th>Itens</th>
+                                <th>Itens & Observação</th>
                                 <th>Valor</th>
                                 <th>Status</th>
                                 <th>Entregador</th>
@@ -86,6 +86,9 @@
         tbody.innerHTML = pedidos.length ? pedidos.map(p => {
             const itensStr = p.itens ? p.itens.map(i => `${i.quantidade}x ${i.nome_produto}`).join(', ') : 'Nenhum item';
             
+            // Renderiza a observação enviada pelo cliente em destaque na tabela
+            const obsHtml = p.observacao ? `<br><small style="color:#d9534f;"><i class="fa-solid fa-triangle-exclamation"></i> <b>Obs:</b> ${p.observacao}</small>` : '';
+            
             let opcoesEntregadores = '<option value="">Sem entregador</option>';
             listaEntregadoresGlobal.forEach(e => {
                 const selecionado = e.id_entregador == p.id_entregador ? 'selected' : '';
@@ -100,7 +103,10 @@
                         <small style="color:#555;"><i class="fa-solid fa-location-dot" style="color:#e67e22;"></i> ${p.endereco_completo || 'Endereço não informado'}</small><br>
                         <small style="color:#777;">Tel: ${p.telefone || 'Não informado'}</small>
                     </td>
-                    <td>${itensStr}</td>
+                    <td>
+                        ${itensStr}
+                        ${obsHtml}
+                    </td>
                     <td><strong>R$ ${parseFloat(p.valor_total_pedido).toFixed(2).replace('.', ',')}</strong></td>
                     <td>
                         <select class="form-control" style="padding: 4px; font-size: 12px;" onchange="alterarStatus(${p.id_pedido}, this.value)">
@@ -122,7 +128,6 @@
         }).join('') : `<tr><td colspan="7" style="text-align:center; padding: 20px;">Nenhum pedido encontrado para este filtro.</td></tr>`;
     }
 
-    // Função para filtrar os pedidos pelos botões do topo
     function filtrarPedidos(statusFiltro, elementoBtn) {
         document.querySelectorAll('.page-body button, .page-body .btn').forEach(b => b.classList.remove('active'));
         if (elementoBtn) elementoBtn.classList.add('active');
@@ -135,7 +140,6 @@
         }
     }
 
-    // Associa os cliques aos botões de filtro automaticamente com base no texto deles
     document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => {
             const botoesFiltro = document.querySelectorAll('.page-body button, .page-body .btn');
@@ -146,7 +150,7 @@
                         let statusMapeado = texto;
                         if (texto === 'Recebido') statusMapeado = 'Pendente';
                         if (texto === 'Saiu p/ entrega') statusMapeado = 'Saiu para entrega';
-                        if (texto === 'Entregue') statusMapeado = 'Entregue';
+                        if (texto === 'Cancelado') statusMapeado = 'Cancelado';
                         filtrarPedidos(statusMapeado, e.currentTarget);
                     };
                 }
