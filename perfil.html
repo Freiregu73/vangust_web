@@ -71,19 +71,13 @@
                     </div>
                 </div>
 
-                <!-- MODO EDIÇÃO-->
+                <!-- MODO EDIÇÃO (Com margem corrigida para o avatar não cortar) -->
                 <div id="editMode" style="display:none;padding:24px;">
                     <form id="formPerfil">
-                        <div class="perfil-foto-upload">
+                        <div class="perfil-banner" style="margin: -24px -24px 20px -24px; border-radius: 12px 12px 0 0;"></div>
+                        <div class="perfil-avatar-wrap" style="margin-top: -65px; margin-bottom: 25px;">
                             <div class="perfil-avatar-grande" id="editAvatar"></div>
-                            <label class="trocar-foto" for="f_foto" title="Trocar foto">
-                                <i class="fa-solid fa-camera"></i>
-                            </label>
-                            <input type="file" id="f_foto" accept="image/*" style="display:none;">
                         </div>
-                        <p style="text-align:center;color:var(--vg-text-light);font-size:12px;margin-top:10px;margin-bottom:22px;">
-                            Clique no ícone da câmera para trocar a foto
-                        </p>
 
                         <div class="form-group">
                             <label>Nome</label>
@@ -98,7 +92,7 @@
                             <input type="password" id="f_senha" placeholder="Deixe em branco para manter a atual">
                         </div>
 
-                        <div class="modal-actions">
+                        <div class="modal-actions" style="margin-top: 20px;">
                             <button type="button" class="btn btn-outline" onclick="cancelarEdicao()">Cancelar</button>
                             <button type="submit" class="btn btn-primary">Salvar alterações</button>
                         </div>
@@ -120,10 +114,9 @@
     VangustAuth.exigirLogin();
     VangustLayout.montar('perfil.html');
 
-    let fotoTemporaria = null;
-
     function preencherAvatar(elementoId, usuario) {
         const el = document.getElementById(elementoId);
+        if (!el) return;
         if (usuario.foto) {
             el.style.backgroundImage = `url('${usuario.foto}')`;
             el.textContent = '';
@@ -142,7 +135,6 @@
         document.getElementById('viewEmail').textContent = usuario.email;
         document.getElementById('viewEmailRow').textContent = usuario.email;
         
-        // Exibe o cargo real guardado no objeto do utilizador logado
         const cargoAtual = usuario.cargo ? usuario.cargo : 'Funcionário';
         document.getElementById('textoCargo').textContent = cargoAtual;
 
@@ -153,8 +145,6 @@
         document.getElementById('f_email').value = usuario.email;
         document.getElementById('f_senha').value = '';
         preencherAvatar('editAvatar', usuario);
-
-        fotoTemporaria = null;
     }
 
     function ativarEdicao() {
@@ -168,43 +158,33 @@
         document.getElementById('viewMode').style.display = 'block';
     }
 
-    document.getElementById('f_foto').addEventListener('change', function (e) {
-        const arquivo = e.target.files[0];
-        if (!arquivo) return;
-
-        if (!arquivo.type.startsWith('image/')) {
-            alert('Selecione um arquivo de imagem válido.');
-            return;
-        }
-
-        const leitor = new FileReader();
-        leitor.onload = function (ev) {
-            fotoTemporaria = ev.target.result;
-            const el = document.getElementById('editAvatar');
-            el.style.backgroundImage = `url('${fotoTemporaria}')`;
-            el.textContent = '';
-        };
-        leitor.readAsDataURL(arquivo);
-    });
-
     document.getElementById('formPerfil').addEventListener('submit', async function (e) {
         e.preventDefault();
 
         const usuarioAtual = VangustAuth.getUsuarioLogado();
+        if (!usuarioAtual) {
+            alert('Sessão expirada. Faça login novamente.');
+            window.location.href = 'index.html';
+            return;
+        }
+
+        const idUsuario = usuarioAtual.id_usuario || usuarioAtual.id;
         const nome = document.getElementById('f_nome').value.trim();
         const email = document.getElementById('f_email').value.trim();
         const senha = document.getElementById('f_senha').value;
 
-        if (!nome || !email) {
-            alert('Preencha nome e e-mail.');
+        if (!idUsuario || !nome || !email) {
+            alert('Erro: ID, nome e e-mail são obrigatórios.');
             return;
         }
 
         const formData = new FormData();
-        formData.append('id_usuario', usuarioAtual.id_usuario);
+        formData.append('id_usuario', idUsuario);
         formData.append('nome', nome);
         formData.append('email', email);
-        if (senha) formData.append('senha', senha);
+        if (senha) {
+            formData.append('senha', senha);
+        }
 
         try {
             const resposta = await fetch('http://localhost/api_hamburgueria/atualizar_perfil.php', {
@@ -215,8 +195,9 @@
             const resultado = await resposta.json();
 
             if (resposta.ok && resultado.sucesso) {
-                // Mantém o cargo existente ao atualizar a sessão
-                const dadosAtualizados = { ...usuarioAtual, nome, email };
+                const cargoAtual = resultado.usuario && resultado.usuario.cargo ? resultado.usuario.cargo : (usuarioAtual.cargo || 'Atendente');
+                const dadosAtualizados = { ...usuarioAtual, id_usuario: idUsuario, nome, email, cargo: cargoAtual };
+                
                 sessionStorage.setItem('vangust_admin_dados', JSON.stringify(dadosAtualizados));
 
                 carregarDados();
@@ -227,10 +208,12 @@
                 msg.style.display = 'block';
                 setTimeout(() => msg.style.display = 'none', 3000);
 
-                mostrarToast('Perfil atualizado com sucesso.');
+                if (typeof mostrarToast === 'function') {
+                    mostrarToast('Perfil atualizado com sucesso.');
+                }
                 VangustLayout.montar('perfil.html');
             } else {
-                alert('Erro ao atualizar: ' + (resultado.erro || 'Erro desconhecido'));
+                alert('Erro ao atualizar: ' + (resultado.erro || resultado.mensagem || 'Erro desconhecido'));
             }
         } catch (erro) {
             alert('Erro de conexão com a API.');
