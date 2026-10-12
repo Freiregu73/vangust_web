@@ -11,9 +11,9 @@ const VangustAuth = (() => {
         formData.append('email', email);
         formData.append('senha', senha);
 
-
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/login.php', {
+            // Aponta para o login restrito a funcionários criado no backend
+            const resposta = await fetch('http://localhost/api_hamburgueria/login_painel.php', {
                 method: 'POST',
                 body: formData
             });

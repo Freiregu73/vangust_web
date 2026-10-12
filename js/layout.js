@@ -1,11 +1,12 @@
 const VangustLayout = (() => {
-    const ITENS_MENU = [
-        { pagina: 'dashboard.html', icone: 'fa-chart-line', label: 'Dashboard' },
-        { pagina: 'pedidos.html', icone: 'fa-receipt', label: 'Pedidos' },
-        { pagina: 'cardapio.html', icone: 'fa-burger', label: 'Cardápio' },
-        { pagina: 'clientes.html', icone: 'fa-users', label: 'Clientes' },
-        { pagina: 'entregadores.html', icone: 'fa-motorcycle', label: 'Entregadores' },
-    ];
+   const ITENS_MENU = [
+    { pagina: 'dashboard.html', icone: 'fa-chart-line', label: 'Dashboard' },
+    { pagina: 'pedidos.html', icone: 'fa-receipt', label: 'Pedidos' },
+    { pagina: 'cardapio.html', icone: 'fa-burger', label: 'Cardápio' },
+    { pagina: 'clientes.html', icone: 'fa-users', label: 'Clientes' },
+    { pagina: 'entregadores.html', icone: 'fa-motorcycle', label: 'Entregadores' },
+    { pagina: 'cupons.html', icone: 'fa-ticket', label: 'Cupons' }, // <--- ADICIONADO AQUI
+];
 
     function renderSidebar(paginaAtual) {
         const itensHtml = ITENS_MENU.map(item => `
