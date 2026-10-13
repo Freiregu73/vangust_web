@@ -77,12 +77,17 @@
     VangustAuth.exigirLogin();
     VangustLayout.montar('entregadores.html');
 
+    // Definição dinâmica do URL da API para suportar localhost e Locaweb
+    const API_BASE = window.location.hostname === 'localhost' 
+        ? 'http://localhost/api_hamburgueria/' 
+        : window.location.origin + '/api_hamburgueria/';
+
     async function renderizarEntregadores() {
         const tbody = document.getElementById('tbodyEntregadores');
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">A carregar entregadores...</td></tr>';
 
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/listar_entregadores.php');
+            const resposta = await fetch(API_BASE + 'listar_entregadores.php');
             const entregadores = await resposta.json();
 
             tbody.innerHTML = entregadores.length ? entregadores.map(e => `
@@ -147,7 +152,7 @@
         formData.append('ativo', 1);
 
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/salvar_entregador.php', {
+            const resposta = await fetch(API_BASE + 'salvar_entregador.php', {
                 method: 'POST',
                 body: formData
             });
@@ -174,7 +179,7 @@
         formData.append('id', id);
 
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/excluir_entregador.php', {
+            const resposta = await fetch(API_BASE + 'excluir_entregador.php', {
                 method: 'POST',
                 body: formData
             });

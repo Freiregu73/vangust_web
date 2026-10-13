@@ -62,12 +62,17 @@
     VangustAuth.exigirLogin();
     VangustLayout.montar('pedidos.html');
 
+    // Definição dinâmica do URL da API para suportar localhost e Locaweb
+    const API_BASE = window.location.hostname === 'localhost' 
+        ? 'http://localhost/api_hamburgueria/' 
+        : window.location.origin + '/api_hamburgueria/';
+
     let todosOsPedidos = [];
     let listaEntregadoresGlobal = [];
 
     async function carregarPedidos() {
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/listar_pedidos.php');
+            const resposta = await fetch(API_BASE + 'listar_pedidos.php');
             const resultado = await resposta.json();
 
             todosOsPedidos = resultado.pedidos || [];
@@ -86,7 +91,6 @@
         tbody.innerHTML = pedidos.length ? pedidos.map(p => {
             const itensStr = p.itens ? p.itens.map(i => `${i.quantidade}x ${i.nome_produto}`).join(', ') : 'Nenhum item';
             
-            // Renderiza a observação enviada pelo cliente em destaque na tabela
             const obsHtml = p.observacao ? `<br><small style="color:#d9534f;"><i class="fa-solid fa-triangle-exclamation"></i> <b>Obs:</b> ${p.observacao}</small>` : '';
             
             let opcoesEntregadores = '<option value="">Sem entregador</option>';
@@ -164,7 +168,7 @@
         formData.append('status_pedido', novoStatus);
 
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/atualizar_status_pedido.php', {
+            const resposta = await fetch(API_BASE + 'atualizar_status_pedido.php', {
                 method: 'POST',
                 body: formData
             });
@@ -186,7 +190,7 @@
         formData.append('id_entregador', idEntregador);
 
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/atribuir_entregador.php', {
+            const resposta = await fetch(API_BASE + 'atribuir_entregador.php', {
                 method: 'POST',
                 body: formData
             });

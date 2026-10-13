@@ -96,12 +96,17 @@
     VangustAuth.exigirLogin();
     VangustLayout.montar('cupons.html');
 
+    // Definição dinâmica do URL da API para suportar localhost e Locaweb
+    const API_BASE = window.location.hostname === 'localhost' 
+        ? 'http://localhost/api_hamburgueria/' 
+        : window.location.origin + '/api_hamburgueria/';
+
     async function renderizarCupons() {
         const tbody = document.getElementById('tbodyCupons');
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">A carregar cupons...</td></tr>';
 
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/listar_cupons_admin.php');
+            const resposta = await fetch(API_BASE + 'listar_cupons_admin.php');
             const resultado = await resposta.json();
             const cupons = resultado.cupons || [];
 
@@ -168,7 +173,7 @@
         formData.append('status_cupom', document.getElementById('f_status').value);
 
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/salvar_cupom.php', {
+            const resposta = await fetch(API_BASE + 'salvar_cupom.php', {
                 method: 'POST',
                 body: formData
             });
@@ -194,7 +199,7 @@
         formData.append('id_cupom', id);
 
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/excluir_cupom.php', {
+            const resposta = await fetch(API_BASE + 'excluir_cupom.php', {
                 method: 'POST',
                 body: formData
             });

@@ -91,18 +91,22 @@
     VangustLayout.montar('funcionarios.html');
 
     const usuarioLogado = VangustAuth.getUsuarioLogado();
-    const eAdmin = usuarioLogado && usuarioLogado.cargo === 'Administrador'; // Ajuste conforme a propriedade de cargo guardada na sessão
+    const eAdmin = usuarioLogado && usuarioLogado.cargo === 'Administrador';
+
+    // Definição dinâmica do URL da API para suportar localhost e Locaweb
+    const API_BASE = window.location.hostname === 'localhost' 
+        ? 'http://localhost/api_hamburgueria/' 
+        : window.location.origin + '/api_hamburgueria/';
 
     async function carregarFuncionarios() {
         const tbody = document.getElementById('tbodyFuncionarios');
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">A carregar funcionários...</td></tr>';
 
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/listar_funcionarios.php');
+            const resposta = await fetch(API_BASE + 'listar_funcionarios.php');
             const resultado = await resposta.json();
             const funcionarios = resultado.funcionarios || [];
 
-            // Se não for admin, esconde o botão de novo funcionário
             const btnNovo = document.querySelector('.card-header-row button');
             if (btnNovo && !eAdmin) {
                 btnNovo.style.display = 'none';
@@ -137,7 +141,7 @@
         formData.append('id_admin_logado', usuarioLogado.id_usuario);
 
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/atualizar_cargo.php', {
+            const resposta = await fetch(API_BASE + 'atualizar_cargo.php', {
                 method: 'POST',
                 body: formData
             });
@@ -147,7 +151,7 @@
                 carregarFuncionarios();
             } else {
                 alert('Erro: ' + (resultado.erro || 'Não foi possível alterar o cargo.'));
-                carregarFuncionarios(); // Reverte a tabela
+                carregarFuncionarios();
             }
         } catch (erro) {
             alert('Erro de conexão ao alterar cargo.');
@@ -177,7 +181,7 @@
         formData.append('id_admin_logado', usuarioLogado.id_usuario);
 
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/salvar_funcionario.php', {
+            const resposta = await fetch(API_BASE + 'salvar_funcionario.php', {
                 method: 'POST',
                 body: formData
             });

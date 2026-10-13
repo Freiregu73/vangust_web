@@ -25,13 +25,13 @@
                 <div class="table-wrap">
                     <table class="vg-table">
                         <thead>
-    <tr>
-        <th>ID</th>
-        <th>Cliente</th>
-        <th>Contato</th>
-        <th>Total Gasto</th>
-    </tr>
-</thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Contato</th>
+                                <th>Total Gasto</th>
+                            </tr>
+                        </thead>
                         <tbody id="tbodyClientes"></tbody>
                     </table>
                 </div>
@@ -50,6 +50,11 @@
     VangustAuth.exigirLogin();
     VangustLayout.montar('clientes.html');
 
+    // Definição dinâmica do URL da API para suportar localhost e Locaweb sem alterações manuais
+    const API_BASE = window.location.hostname === 'localhost' 
+        ? 'http://localhost/api_hamburgueria/' 
+        : window.location.origin + '/api_hamburgueria/';
+
     async function renderizarClientes() {
         const tbody = document.getElementById('tbodyClientes') || document.querySelector('table tbody');
         if (!tbody) return;
@@ -57,7 +62,7 @@
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">A carregar clientes...</td></tr>';
 
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/listar_clientes.php');
+            const resposta = await fetch(API_BASE + 'listar_clientes.php');
             const clientes = await resposta.json();
 
             tbody.innerHTML = clientes.length ? clientes.map(c => `
@@ -106,7 +111,7 @@
             formData.append('telefone', telefone);
 
             try {
-                const resposta = await fetch('http://localhost/api_hamburgueria/salvar_cliente.php', {
+                const resposta = await fetch(API_BASE + 'salvar_cliente.php', {
                     method: 'POST',
                     body: formData
                 });

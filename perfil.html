@@ -114,6 +114,11 @@
     VangustAuth.exigirLogin();
     VangustLayout.montar('perfil.html');
 
+    // Definição dinâmica do URL da API para suportar localhost e Locaweb
+    const API_BASE = window.location.hostname === 'localhost' 
+        ? 'http://localhost/api_hamburgueria/' 
+        : window.location.origin + '/api_hamburgueria/';
+
     function preencherAvatar(elementoId, usuario) {
         const el = document.getElementById(elementoId);
         if (!el) return;
@@ -187,7 +192,7 @@
         }
 
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/atualizar_perfil.php', {
+            const resposta = await fetch(API_BASE + 'atualizar_perfil.php', {
                 method: 'POST',
                 body: formData
             });

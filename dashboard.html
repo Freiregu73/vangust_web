@@ -98,11 +98,16 @@
         document.getElementById('saudacao').textContent = `Olá, ${usuarioLogado.nome} !`;
     }
 
+    // Definição dinâmica do URL da API para suportar localhost e Locaweb
+    const API_BASE = window.location.hostname === 'localhost' 
+        ? 'http://localhost/api_hamburgueria/' 
+        : window.location.origin + '/api_hamburgueria/';
+
     let meuGrafico = null;
 
     async function carregarDashboard() {
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/estatisticas.php');
+            const resposta = await fetch(API_BASE + 'estatisticas.php');
             const dados = await resposta.json();
 
             if (resposta.ok && dados.sucesso) {

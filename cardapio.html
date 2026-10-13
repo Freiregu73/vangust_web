@@ -91,13 +91,18 @@
     VangustAuth.exigirLogin();
     VangustLayout.montar('cardapio.html');
 
+    // Definição dinâmica do URL da API para suportar localhost e Locaweb sem alterações manuais
+    const API_BASE = window.location.hostname === 'localhost' 
+        ? 'http://localhost/api_hamburgueria/' 
+        : window.location.origin + '/api_hamburgueria/';
+
     // 1. Função para carregar os produtos reais da base de dados via API
     async function renderizarProdutos() {
         const tbody = document.getElementById('tbodyProdutos');
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">A carregar produtos...</td></tr>';
 
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/produtos.php'); 
+            const resposta = await fetch(API_BASE + 'produtos.php');
             const produtos = await resposta.json();
 
             tbody.innerHTML = produtos.length ? produtos.map(p => `
@@ -125,7 +130,7 @@
             `).join('') : `<tr><td colspan="6" class="empty-state">Nenhum produto cadastrado ainda.</td></tr>`;
         } catch (erro) {
             console.error("Erro ao carregar produtos:", erro);
-            tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Erro ao ligar à base de dados. Verifique o XAMPP.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Erro ao ligar à base de dados. Verifique a ligação.</td></tr>`;
         }
     }
 
@@ -156,36 +161,40 @@
     }
 
     async function excluirProduto(id) {
-    if (!confirm('Tem certeza de que deseja remover este produto do cardápio?')) return;
+        if (!confirm('Tem certeza de que deseja remover este produto do cardápio?')) return;
 
-    const formData = new FormData();
-    formData.append('id', id);
+        const formData = new FormData();
+        formData.append('id', id);
 
-    try {
-        const resposta = await fetch('http://localhost/api_hamburgueria/excluir_produto.php', {
-            method: 'POST',
-            body: formData
-        });
+        try {
+            const resposta = await fetch(API_BASE + 'excluir_produto.php', {
+                method: 'POST',
+                body: formData
+            });
 
-        if (resposta.ok) {
-            mostrarToast('Produto removido com sucesso.');
-            renderizarProdutos(); // Atualiza a tabela imediatamente
-        } else {
-            const resultado = await resposta.json().catch(() => ({}));
-            alert('Erro ao excluir: ' + (resultado.erro || 'Erro desconhecido no servidor'));
+            if (resposta.ok) {
+                mostrarToast('Produto removido com sucesso.');
+                renderizarProdutos();
+            } else {
+                const resultado = await resposta.json().catch(() => ({}));
+                alert('Erro ao excluir: ' + (resultado.erro || 'Erro desconhecido no servidor'));
+            }
+        } catch (erro) {
+            alert('Erro ao conectar com a API para exclusão.');
+            console.error(erro);
         }
-    } catch (erro) {
-        alert('Erro ao conectar com a API para exclusão.');
-        console.error(erro);
     }
-}
 
     // 2. Envio do formulário para salvar o produto e a imagem na API
     document.getElementById('formProduto').addEventListener('submit', async function (e) {
         e.preventDefault();
+        const idProduto = document.getElementById('f_id_produto').value;
         const preco = parseFloat(document.getElementById('f_preco').value.replace(',', '.'));
 
         const formData = new FormData();
+        if (idProduto) {
+            formData.append('id_produto', idProduto);
+        }
         formData.append('nome_produto', document.getElementById('f_nome').value.trim());
         formData.append('descricao', document.getElementById('f_descricao').value.trim());
         formData.append('categoria', document.getElementById('f_categoria').value.trim());
@@ -197,15 +206,15 @@
         }
 
         try {
-            const resposta = await fetch('http://localhost/api_hamburgueria/salvar_produto.php', {
+            const resposta = await fetch(API_BASE + 'salvar_produto.php', {
                 method: 'POST',
                 body: formData
             });
             
             if (resposta.ok) {
                 fecharModal();
-                alert('Produto cadastrado com sucesso!');
-                renderizarProdutos(); // Atualiza a tabela imediatamente na tela
+                alert('Produto salvo com sucesso!');
+                renderizarProdutos();
             } else {
                 const erroData = await resposta.json();
                 alert('Erro ao salvar: ' + (erroData.erro || 'Erro desconhecido'));
@@ -216,7 +225,6 @@
         }
     });
 
-    // Carrega a listagem assim que a página abre
     renderizarProdutos();
 </script>
 </body>
