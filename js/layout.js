@@ -5,12 +5,15 @@ const VangustLayout = (() => {
     { pagina: 'cardapio.html', icone: 'fa-burger', label: 'Cardápio' },
     { pagina: 'clientes.html', icone: 'fa-users', label: 'Clientes' },
     { pagina: 'entregadores.html', icone: 'fa-motorcycle', label: 'Entregadores' },
-    { pagina: 'funcionarios.html', icone: 'fa-user-shield', label: 'Funcionários' }, // <--- ADICIONADO AQUI
+    { pagina: 'funcionarios.html', icone: 'fa-user-shield', label: 'Funcionários' },
     { pagina: 'cupons.html', icone: 'fa-ticket', label: 'Cupons' },
 ];
 
     function renderSidebar(paginaAtual) {
-        const itensHtml = ITENS_MENU.map(item => `
+        // Exibe todos os itens do menu para qualquer cargo (o Atendente pode ver tudo)
+        const itensPermitidos = ITENS_MENU;
+
+        const itensHtml = itensPermitidos.map(item => `
             <li class="${item.pagina === paginaAtual ? 'active' : ''}">
                 <a href="${item.pagina}"><span class="icon"><i class="fa-solid ${item.icone}"></i></span> ${item.label}</a>
             </li>
@@ -33,7 +36,7 @@ const VangustLayout = (() => {
         const usuario = VangustAuth.getUsuarioLogado();
         const inicial = usuario && usuario.nome ? usuario.nome.charAt(0).toUpperCase() : 'U';
         const nomeUsuario = usuario && usuario.nome ? usuario.nome : 'Utilizador';
-        const cargoUsuario = usuario && usuario.cargo ? usuario.cargo : 'Funcionário'; // <--- Lê dinamicamente o cargo
+        const cargoUsuario = usuario && usuario.cargo ? usuario.cargo : 'Funcionário';
         
         const avatarHtml = usuario && usuario.foto
             ? `<img src="${usuario.foto}" alt="${nomeUsuario}" class="topbar-avatar" style="object-fit:cover;">`
@@ -108,5 +111,5 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             });
         }
-    }, 300);
+    },);
 });

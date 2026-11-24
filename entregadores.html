@@ -23,14 +23,14 @@
                     <h1 class="page-title">Entregadores</h1>
                     <p class="page-subtitle">Equipe própria da Vangust Burguer.</p>
                 </div>
-                <button class="btn btn-primary" onclick="abrirModalNovo()"><i class="fa-solid fa-plus"></i> Novo entregador</button>
+                <button class="btn btn-primary" id="btnNovoEntregador" onclick="abrirModalNovo()"><i class="fa-solid fa-plus"></i> Novo entregador</button>
             </div>
 
             <div class="card-box">
                 <div class="table-wrap">
                     <table class="vg-table">
                         <thead>
-                            <tr><th>Nome</th><th>Telefone</th><th>Veículo</th><th>Em entrega agora</th><th>Status</th><th></th></tr>
+                            <tr><th>Nome</th><th>Telefone</th><th>Veículo</th><th>Status</th><th></th></tr>
                         </thead>
                         <tbody id="tbodyEntregadores"></tbody>
                     </table>
@@ -77,7 +77,14 @@
     VangustAuth.exigirLogin();
     VangustLayout.montar('entregadores.html');
 
-    // Definição dinâmica do URL da API para suportar localhost e Locaweb
+    const usuarioLogado = VangustAuth.getUsuarioLogado();
+    const isAtendente = usuarioLogado && usuarioLogado.cargo && usuarioLogado.cargo.toLowerCase() === 'atendente';
+
+    if (isAtendente) {
+        const btnNovo = document.getElementById('btnNovoEntregador');
+        if (btnNovo) btnNovo.style.display = 'none';
+    }
+
     const API_BASE = window.location.hostname === 'localhost' 
         ? 'http://localhost/api_hamburgueria/' 
         : window.location.origin + '/api_hamburgueria/';
@@ -92,9 +99,7 @@
 
             tbody.innerHTML = entregadores.length ? entregadores.map(e => `
                 <tr>
-                    <td>
-                        <strong>${e.nome}</strong>
-                    </td>
+                    <td><strong>${e.nome}</strong></td>
                     <td>${e.telefone || 'Não informado'}</td>
                     <td>${e.veiculo || 'Não informado'}</td>
                     <td>
@@ -103,8 +108,10 @@
                         </span>
                     </td>
                     <td style="white-space:nowrap;">
-                        <button class="btn btn-outline btn-sm" onclick='abrirModalEditar(${JSON.stringify(e)})'><i class="fa-solid fa-pen"></i></button>
-                        <button class="btn btn-danger btn-sm" onclick="excluirEntregador(${e.id_entregador})"><i class="fa-solid fa-trash"></i></button>
+                        ${isAtendente ? '' : `
+                            <button class="btn btn-outline btn-sm" onclick='abrirModalEditar(${JSON.stringify(e)})'><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn btn-danger btn-sm" onclick="excluirEntregador(${e.id_entregador})"><i class="fa-solid fa-trash"></i></button>
+                        `}
                     </td>
                 </tr>
             `).join('') : `<tr><td colspan="5" class="empty-state">Nenhum entregador cadastrado ainda.</td></tr>`;
@@ -115,6 +122,7 @@
     }
 
     function abrirModalNovo() {
+        if (isAtendente) return;
         document.getElementById('modalTitulo').textContent = 'Novo entregador';
         document.getElementById('f_id').value = '';
         document.getElementById('f_nome').value = '';
@@ -124,6 +132,7 @@
     }
 
     function abrirModalEditar(e) {
+        if (isAtendente) return;
         document.getElementById('modalTitulo').textContent = 'Editar entregador';
         document.getElementById('f_id').value = e.id_entregador;
         document.getElementById('f_nome').value = e.nome;
@@ -138,6 +147,7 @@
 
     document.getElementById('formEntregador').addEventListener('submit', async function (event) {
         event.preventDefault();
+        if (isAtendente) return;
 
         const id = document.getElementById('f_id').value;
         const nome = document.getElementById('f_nome').value.trim();
@@ -168,11 +178,11 @@
             }
         } catch (erro) {
             alert('Erro de conexão com a API.');
-            console.error(erro);
         }
     });
 
     async function excluirEntregador(id) {
+        if (isAtendente) return;
         if (!confirm('Tem certeza de que deseja remover este entregador?')) return;
 
         const formData = new FormData();
@@ -193,8 +203,7 @@
                 alert('Erro ao excluir: ' + (resultado.erro || 'Erro desconhecido'));
             }
         } catch (erro) {
-            alert('Erro ao conectar com a API para exclusão.');
-            console.error(erro);
+            alert('Erro ao conectar com a API.');
         }
     }
 

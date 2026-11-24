@@ -30,13 +30,16 @@
                         <div class="stat-label">Itens no cardápio</div>
                     </div>
                 </div>
-                <div class="stat-card">
+
+                <!-- CARTÃO DE RECEITA (Ocultado automaticamente se não for Gerente) -->
+                <div class="stat-card" id="cardReceitaBox">
                     <div class="stat-icon success"><i class="fa-solid fa-sack-dollar"></i></div>
                     <div>
                         <div class="stat-value" id="statReceita">R$ 0,00</div>
                         <div class="stat-label">Receita total</div>
                     </div>
                 </div>
+
                 <div class="stat-card">
                     <div class="stat-icon"><i class="fa-solid fa-receipt"></i></div>
                     <div>
@@ -53,8 +56,9 @@
                 </div>
             </div>
 
-            <div class="grid-2">
-                <div class="card-box">
+            <div class="grid-2" id="gridEstatisticas">
+                <!-- GRÁFICO DE RECEITA (Ocultado automaticamente se não for Gerente) -->
+                <div class="card-box" id="boxGraficoReceita">
                     <div class="card-header-row"><h3>Receita — últimos 7 dias</h3></div>
                     <canvas id="graficoReceita" height="110"></canvas>
                 </div>
@@ -98,7 +102,6 @@
         document.getElementById('saudacao').textContent = `Olá, ${usuarioLogado.nome} !`;
     }
 
-    // Definição dinâmica do URL da API para suportar localhost e Locaweb
     const API_BASE = window.location.hostname === 'localhost' 
         ? 'http://localhost/api_hamburgueria/' 
         : window.location.origin + '/api_hamburgueria/';
@@ -107,17 +110,65 @@
 
     async function carregarDashboard() {
         try {
-            const resposta = await fetch(API_BASE + 'estatisticas.php');
+            const usuarioLogado = VangustAuth.getUsuarioLogado();
+            const idUsuario = usuarioLogado ? (usuarioLogado.id_usuario || usuarioLogado.id) : 0;
+
+            const resposta = await fetch(API_BASE + `estatisticas.php?id_usuario=${idUsuario}`);
             const dados = await resposta.json();
 
             if (resposta.ok && dados.sucesso) {
-                // 1. Cartões do topo
                 document.getElementById('statProdutos').textContent = dados.total_produtos;
-                document.getElementById('statReceita').textContent = 'R$ ' + dados.faturamento.toFixed(2).replace('.', ',');
                 document.getElementById('statPedidosHoje').textContent = dados.total_pedidos;
                 document.getElementById('statClientes').textContent = dados.total_clientes;
 
-                // 2. Tabela de Pedidos Recentes
+                const cardReceitaBox = document.getElementById('cardReceitaBox');
+                const boxGraficoReceita = document.getElementById('boxGraficoReceita');
+                const gridEstatisticas = document.getElementById('gridEstatisticas');
+
+                if (dados.permissao_financeira) {
+                    // SE FOR GERENTE: Mostra os elementos financeiros e renderiza o gráfico
+                    if (cardReceitaBox) cardReceitaBox.style.display = 'flex';
+                    if (boxGraficoReceita) boxGraficoReceita.style.display = 'block';
+                    document.getElementById('statReceita').textContent = 'R$ ' + dados.faturamento.toFixed(2).replace('.', ',');
+
+                    const ctx = document.getElementById('graficoReceita').getContext('2d');
+                    const labels = dados.grafico_receita.map(item => item.data);
+                    const valores = dados.grafico_receita.map(item => item.total);
+
+                    if (meuGrafico) meuGrafico.destroy();
+
+                    meuGrafico = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels.length ? labels : ['Sem dados'],
+                            datasets: [{
+                                label: 'Receita (R$)',
+                                data: valores.length ? valores : [0],
+                                borderColor: '#e67e22',
+                                backgroundColor: 'rgba(230, 126, 34, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.3
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                } else {
+                    // SE NÃO FOR GERENTE (Admin, Atendente, etc.): Oculta completamente os elementos financeiros
+                    if (cardReceitaBox) cardReceitaBox.style.display = 'none';
+                    if (boxGraficoReceita) {
+                        boxGraficoReceita.style.display = 'none';
+                    }
+                    // Se o gráfico sumir, ajusta a grelha para o bloco de status ocupar o espaço disponível
+                    if (gridEstatisticas) {
+                        gridEstatisticas.style.gridTemplateColumns = '1fr';
+                    }
+                }
+
+                // Tabela de Pedidos Recentes
                 const tbody = document.getElementById('tbodyPedidosRecentes');
                 if (dados.pedidos_recentes && dados.pedidos_recentes.length > 0) {
                     tbody.innerHTML = dados.pedidos_recentes.map(p => `
@@ -133,7 +184,7 @@
                     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum pedido recente encontrado.</td></tr>';
                 }
 
-                // 3. Pedidos por Status
+                // Pedidos por Status
                 const divStatus = document.getElementById('listaStatus');
                 if (dados.pedidos_por_status && dados.pedidos_por_status.length > 0) {
                     divStatus.innerHTML = dados.pedidos_por_status.map(s => `
@@ -146,35 +197,6 @@
                     divStatus.innerHTML = '<p style="color: #777; text-align: center; padding: 15px;">Nenhum status registado.</p>';
                 }
 
-                // 4. Gráfico de Receita (Chart.js)
-                const ctx = document.getElementById('graficoReceita').getContext('2d');
-                const labels = dados.grafico_receita.map(item => item.data);
-                const valores = dados.grafico_receita.map(item => item.total);
-
-                if (meuGrafico) meuGrafico.destroy();
-
-                meuGrafico = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels.length ? labels : ['Sem dados'],
-                        datasets: [{
-                            label: 'Receita (R$)',
-                            data: valores.length ? valores : [0],
-                            borderColor: '#e67e22',
-                            backgroundColor: 'rgba(230, 126, 34, 0.1)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.3
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: { legend: { display: false } }
-                    }
-                });
-
-            } else {
-                console.error("Erro ao carregar dados do dashboard");
             }
         } catch (erro) {
             console.error("Erro de conexão com a API de estatísticas:", erro);

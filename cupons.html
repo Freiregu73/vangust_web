@@ -23,7 +23,7 @@
                     <h1 class="page-title">Cupons de Desconto</h1>
                     <p class="page-subtitle">Gerencie os cupons promocionais disponíveis para os clientes no app.</p>
                 </div>
-                <button class="btn btn-primary" onclick="abrirModalNovo()"><i class="fa-solid fa-plus"></i> Novo cupom</button>
+                <button class="btn btn-primary" id="btnNovoCupom" onclick="abrirModalNovo()"><i class="fa-solid fa-plus"></i> Novo cupom</button>
             </div>
 
             <div class="card-box">
@@ -96,7 +96,14 @@
     VangustAuth.exigirLogin();
     VangustLayout.montar('cupons.html');
 
-    // Definição dinâmica do URL da API para suportar localhost e Locaweb
+    const usuarioLogado = VangustAuth.getUsuarioLogado();
+    const isAtendente = usuarioLogado && usuarioLogado.cargo && usuarioLogado.cargo.toLowerCase() === 'atendente';
+
+    if (isAtendente) {
+        const btnNovo = document.getElementById('btnNovoCupom');
+        if (btnNovo) btnNovo.style.display = 'none';
+    }
+
     const API_BASE = window.location.hostname === 'localhost' 
         ? 'http://localhost/api_hamburgueria/' 
         : window.location.origin + '/api_hamburgueria/';
@@ -122,8 +129,10 @@
                         </span>
                     </td>
                     <td style="white-space:nowrap;">
-                        <button class="btn btn-outline btn-sm" onclick='abrirModalEditar(${JSON.stringify(c)})'><i class="fa-solid fa-pen"></i></button>
-                        <button class="btn btn-danger btn-sm" onclick="excluirCupom(${c.id_cupom})"><i class="fa-solid fa-trash"></i></button>
+                        ${isAtendente ? '' : `
+                            <button class="btn btn-outline btn-sm" onclick='abrirModalEditar(${JSON.stringify(c)})'><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn btn-danger btn-sm" onclick="excluirCupom(${c.id_cupom})"><i class="fa-solid fa-trash"></i></button>
+                        `}
                     </td>
                 </tr>
             `).join('') : `<tr><td colspan="6" class="empty-state">Nenhum cupom cadastrado ainda.</td></tr>`;
@@ -134,6 +143,7 @@
     }
 
     function abrirModalNovo() {
+        if (isAtendente) return;
         document.getElementById('modalTitulo').textContent = 'Novo cupom';
         document.getElementById('f_id_cupom').value = '';
         document.getElementById('f_codigo').value = '';
@@ -145,6 +155,7 @@
     }
 
     function abrirModalEditar(c) {
+        if (isAtendente) return;
         document.getElementById('modalTitulo').textContent = 'Editar cupom';
         document.getElementById('f_id_cupom').value = c.id_cupom;
         document.getElementById('f_codigo').value = c.codigo_cupom;
@@ -161,6 +172,7 @@
 
     document.getElementById('formCupom').addEventListener('submit', async function (e) {
         e.preventDefault();
+        if (isAtendente) return;
 
         const formData = new FormData();
         const id = document.getElementById('f_id_cupom').value;
@@ -188,11 +200,11 @@
             }
         } catch (erro) {
             alert('Erro de conexão com a API.');
-            console.error(erro);
         }
     });
 
     async function excluirCupom(id) {
+        if (isAtendente) return;
         if (!confirm('Tem certeza de que deseja excluir este cupom?')) return;
 
         const formData = new FormData();
@@ -213,7 +225,6 @@
             }
         } catch (erro) {
             alert('Erro ao conectar com a API.');
-            console.error(erro);
         }
     }
 
