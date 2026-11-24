@@ -68,8 +68,8 @@
             tbody.innerHTML = clientes.length ? clientes.map(c => `
                 <tr>
                     <td><strong>#${c.id_cliente}</strong></td>
-                    <td>${c.nome_cliente}</td>
-                    <td>${c.telefone || 'Não informado'}</td>
+                    <td>${escaparHtml(c.nome_cliente)}</td>
+                    <td>${escaparHtml(c.telefone || 'Não informado')}</td>
                     <td><strong>R$ ${parseFloat(c.total_gasto).toFixed(2).replace('.', ',')}</strong></td>
                 </tr>
             `).join('') : `<tr><td colspan="4" style="text-align:center; padding:20px;">Nenhum cliente cadastrado ainda.</td></tr>`;

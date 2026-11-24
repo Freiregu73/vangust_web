@@ -71,7 +71,7 @@
             </div>
             <div class="form-group">
                 <label>Senha Temporária (se for novo)</label>
-                <input type="password" id="f_senha" placeholder="Padrão: 123456">
+                <input type="password" id="f_senha" placeholder="Deixe em branco para gerar automaticamente">
             </div>
 
             <div class="modal-actions">
@@ -114,8 +114,8 @@
 
             tbody.innerHTML = funcionarios.length ? funcionarios.map(f => `
                 <tr>
-                    <td><strong>${f.nome}</strong></td>
-                    <td>${f.email}</td>
+                    <td><strong>${escaparHtml(f.nome)}</strong></td>
+                    <td>${escaparHtml(f.email)}</td>
                     <td>
                         ${eAdmin ? `
                             <select class="form-control" style="padding:4px; font-size:12px;" onchange="alterarCargo(${f.id_usuario}, this.value)">
@@ -123,7 +123,7 @@
                                 <option value="Atendente" ${f.cargo === 'Atendente' ? 'selected' : ''}>Atendente</option>
                                 <option value="Gerente" ${f.cargo === 'Gerente' ? 'selected' : ''}>Gerente</option>
                             </select>
-                        ` : `<span class="badge badge-entregue">${f.cargo}</span>`}
+                        ` : `<span class="badge badge-entregue">${escaparHtml(f.cargo)}</span>`}
                     </td>
                     <td><span class="badge ${f.status_ativo == 1 ? 'badge-entregue' : 'badge-cancelado'}">${f.status_ativo == 1 ? 'Ativo' : 'Inativo'}</span></td>
                 </tr>
@@ -190,6 +190,9 @@
             if (resposta.ok && resultado.sucesso) {
                 fecharModal();
                 if (typeof mostrarToast === 'function') mostrarToast(resultado.mensagem);
+                if (resultado.senha_inicial) {
+                    alert('Senha inicial do funcionário: ' + resultado.senha_inicial + '\n\nAnote e repasse a ele agora: ela não será mostrada novamente.');
+                }
                 carregarFuncionarios();
             } else {
                 alert('Erro ao salvar: ' + (resultado.erro || 'Erro desconhecido'));

@@ -9,9 +9,6 @@ const VangustAuth = (() => {
 
     async function login(email, senha) {
 
-        console.log("EMAIL RECEBIDO:", email);
-        console.log("SENHA RECEBIDA:", senha);
-
         const formData = new FormData();
         formData.append('email', email);
         formData.append('senha', senha);

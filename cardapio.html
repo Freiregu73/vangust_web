@@ -23,15 +23,14 @@
                     <h1 class="page-title">Cardápio</h1>
                     <p class="page-subtitle">Gerencie os produtos exibidos no app do cliente.</p>
                 </div>
-                <!-- Botão oculto para Atendente -->
-                <button class="btn btn-primary" id="btnNovoProduto" onclick="abrirModalNovo()"><i class="fa-solid fa-plus"></i> Novo produto</button>
+                <button class="btn btn-primary" onclick="abrirModalNovo()"><i class="fa-solid fa-plus"></i> Novo produto</button>
             </div>
 
             <div class="card-box">
                 <div class="table-wrap">
                     <table class="vg-table">
                         <thead>
-                            <tr><th>Produto</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Status</th><th id="thAcoes"></th></tr>
+                            <tr><th>Produto</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Status</th><th></th></tr>
                         </thead>
                         <tbody id="tbodyProdutos"></tbody>
                     </table>
@@ -92,19 +91,12 @@
     VangustAuth.exigirLogin();
     VangustLayout.montar('cardapio.html');
 
-    const usuarioLogado = VangustAuth.getUsuarioLogado();
-    const isAtendente = usuarioLogado && usuarioLogado.cargo && usuarioLogado.cargo.toLowerCase() === 'atendente';
-
-    // Oculta o botão de novo produto se for atendente
-    if (isAtendente) {
-        const btnNovo = document.getElementById('btnNovoProduto');
-        if (btnNovo) btnNovo.style.display = 'none';
-    }
-
+    // Definição dinâmica do URL da API para suportar localhost e Locaweb sem alterações manuais
     const API_BASE = window.location.hostname === 'localhost' 
         ? 'http://localhost/api_hamburgueria/' 
         : window.location.origin + '/api_hamburgueria/';
 
+    // 1. Função para carregar os produtos reais da base de dados via API
     async function renderizarProdutos() {
         const tbody = document.getElementById('tbodyProdutos');
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">A carregar produtos...</td></tr>';
@@ -117,35 +109,32 @@
                 <tr>
                     <td>
                         <div style="display:flex; align-items:center; gap:10px;">
-                            ${p.imagem ? `<img src="${p.imagem}" style="width:40px; height:40px; border-radius:8px; object-fit:cover;">` : `<div style="width:40px; height:40px; background:#eee; border-radius:8px;"></div>`}
+                            ${p.imagem ? `<img src="${escaparHtml(p.imagem)}" style="width:40px; height:40px; border-radius:8px; object-fit:cover;">` : `<div style="width:40px; height:40px; background:#eee; border-radius:8px;"></div>`}
                             <div>
-                                <strong>${p.nome_produto}</strong><br>
-                                <span style="color:var(--vg-text-light);font-size:12px;">${p.descricao || ''}</span>
+                                <strong>${escaparHtml(p.nome_produto)}</strong><br>
+                                <span style="color:var(--vg-text-light);font-size:12px;">${escaparHtml(p.descricao || '')}</span>
                             </div>
                         </div>
                     </td>
-                    <td>${p.categoria}</td>
+                    <td>${escaparHtml(p.categoria)}</td>
                     <td>R$ ${parseFloat(p.preco).toFixed(2).replace('.', ',')}</td>
                     <td>Estoque web</td>
                     <td>
-                        <span class="badge badge-entregue">Ativo</span>
+                        <a href="#" class="badge badge-entregue">Ativo</a>
                     </td>
                     <td style="white-space:nowrap;">
-                        ${isAtendente ? '' : `
-                            <button class="btn btn-outline btn-sm" onclick='abrirModalEditar(${JSON.stringify(p)})'><i class="fa-solid fa-pen"></i></button>
-                            <button class="btn btn-danger btn-sm" onclick="excluirProduto(${p.id_produto})"><i class="fa-solid fa-trash"></i></button>
-                        `}
+                        <button class="btn btn-outline btn-sm" onclick="abrirModalEditar(${escaparHtml(JSON.stringify(p))})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-danger btn-sm" onclick="excluirProduto(${p.id_produto})"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>
             `).join('') : `<tr><td colspan="6" class="empty-state">Nenhum produto cadastrado ainda.</td></tr>`;
         } catch (erro) {
             console.error("Erro ao carregar produtos:", erro);
-            tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Erro ao ligar à base de dados.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Erro ao ligar à base de dados. Verifique a ligação.</td></tr>`;
         }
     }
 
     function abrirModalNovo() {
-        if (isAtendente) return;
         document.getElementById('modalTitulo').textContent = 'Novo produto';
         document.getElementById('f_id_produto').value = '';
         if(document.getElementById('f_imagem')) document.getElementById('f_imagem').value = '';
@@ -158,7 +147,6 @@
     }
 
     function abrirModalEditar(p) {
-        if (isAtendente) return;
         document.getElementById('modalTitulo').textContent = 'Editar produto';
         document.getElementById('f_id_produto').value = p.id_produto;
         document.getElementById('f_nome').value = p.nome_produto;
@@ -173,7 +161,6 @@
     }
 
     async function excluirProduto(id) {
-        if (isAtendente) return;
         if (!confirm('Tem certeza de que deseja remover este produto do cardápio?')) return;
 
         const formData = new FormData();
@@ -190,22 +177,24 @@
                 renderizarProdutos();
             } else {
                 const resultado = await resposta.json().catch(() => ({}));
-                alert('Erro ao excluir: ' + (resultado.erro || 'Erro desconhecido'));
+                alert('Erro ao excluir: ' + (resultado.erro || 'Erro desconhecido no servidor'));
             }
         } catch (erro) {
-            alert('Erro ao conectar com a API.');
+            alert('Erro ao conectar com a API para exclusão.');
+            console.error(erro);
         }
     }
 
+    // 2. Envio do formulário para salvar o produto e a imagem na API
     document.getElementById('formProduto').addEventListener('submit', async function (e) {
         e.preventDefault();
-        if (isAtendente) return;
-
         const idProduto = document.getElementById('f_id_produto').value;
         const preco = parseFloat(document.getElementById('f_preco').value.replace(',', '.'));
 
         const formData = new FormData();
-        if (idProduto) formData.append('id_produto', idProduto);
+        if (idProduto) {
+            formData.append('id_produto', idProduto);
+        }
         formData.append('nome_produto', document.getElementById('f_nome').value.trim());
         formData.append('descricao', document.getElementById('f_descricao').value.trim());
         formData.append('categoria', document.getElementById('f_categoria').value.trim());
@@ -232,6 +221,7 @@
             }
         } catch (erro) {
             alert('Erro ao conectar com a API.');
+            console.error(erro);
         }
     });
 

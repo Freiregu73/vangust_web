@@ -23,7 +23,7 @@
                     <h1 class="page-title">Cupons de Desconto</h1>
                     <p class="page-subtitle">Gerencie os cupons promocionais disponíveis para os clientes no app.</p>
                 </div>
-                <button class="btn btn-primary" id="btnNovoCupom" onclick="abrirModalNovo()"><i class="fa-solid fa-plus"></i> Novo cupom</button>
+                <button class="btn btn-primary" onclick="abrirModalNovo()"><i class="fa-solid fa-plus"></i> Novo cupom</button>
             </div>
 
             <div class="card-box">
@@ -96,14 +96,7 @@
     VangustAuth.exigirLogin();
     VangustLayout.montar('cupons.html');
 
-    const usuarioLogado = VangustAuth.getUsuarioLogado();
-    const isAtendente = usuarioLogado && usuarioLogado.cargo && usuarioLogado.cargo.toLowerCase() === 'atendente';
-
-    if (isAtendente) {
-        const btnNovo = document.getElementById('btnNovoCupom');
-        if (btnNovo) btnNovo.style.display = 'none';
-    }
-
+    // Definição dinâmica do URL da API para suportar localhost e Locaweb
     const API_BASE = window.location.hostname === 'localhost' 
         ? 'http://localhost/api_hamburgueria/' 
         : window.location.origin + '/api_hamburgueria/';
@@ -119,20 +112,18 @@
 
             tbody.innerHTML = cupons.length ? cupons.map(c => `
                 <tr>
-                    <td><strong>${c.codigo_cupom}</strong></td>
-                    <td>${c.descricao_cupom || ''}</td>
+                    <td><strong>${escaparHtml(c.codigo_cupom)}</strong></td>
+                    <td>${escaparHtml(c.descricao_cupom || '')}</td>
                     <td>${c.valor_desconto < 1 ? (c.valor_desconto * 100) + '%' : 'R$ ' + parseFloat(c.valor_desconto).toFixed(2).replace('.', ',')}</td>
-                    <td>${c.data_validade}</td>
+                    <td>${escaparHtml(c.data_validade)}</td>
                     <td>
                         <span class="badge ${c.status_cupom == 1 ? 'badge-entregue' : 'badge-cancelado'}">
                             ${c.status_cupom == 1 ? 'Ativo' : 'Inativo'}
                         </span>
                     </td>
                     <td style="white-space:nowrap;">
-                        ${isAtendente ? '' : `
-                            <button class="btn btn-outline btn-sm" onclick='abrirModalEditar(${JSON.stringify(c)})'><i class="fa-solid fa-pen"></i></button>
-                            <button class="btn btn-danger btn-sm" onclick="excluirCupom(${c.id_cupom})"><i class="fa-solid fa-trash"></i></button>
-                        `}
+                        <button class="btn btn-outline btn-sm" onclick="abrirModalEditar(${escaparHtml(JSON.stringify(c))})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-danger btn-sm" onclick="excluirCupom(${c.id_cupom})"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>
             `).join('') : `<tr><td colspan="6" class="empty-state">Nenhum cupom cadastrado ainda.</td></tr>`;
@@ -143,7 +134,6 @@
     }
 
     function abrirModalNovo() {
-        if (isAtendente) return;
         document.getElementById('modalTitulo').textContent = 'Novo cupom';
         document.getElementById('f_id_cupom').value = '';
         document.getElementById('f_codigo').value = '';
@@ -155,7 +145,6 @@
     }
 
     function abrirModalEditar(c) {
-        if (isAtendente) return;
         document.getElementById('modalTitulo').textContent = 'Editar cupom';
         document.getElementById('f_id_cupom').value = c.id_cupom;
         document.getElementById('f_codigo').value = c.codigo_cupom;
@@ -172,7 +161,6 @@
 
     document.getElementById('formCupom').addEventListener('submit', async function (e) {
         e.preventDefault();
-        if (isAtendente) return;
 
         const formData = new FormData();
         const id = document.getElementById('f_id_cupom').value;
@@ -200,11 +188,11 @@
             }
         } catch (erro) {
             alert('Erro de conexão com a API.');
+            console.error(erro);
         }
     });
 
     async function excluirCupom(id) {
-        if (isAtendente) return;
         if (!confirm('Tem certeza de que deseja excluir este cupom?')) return;
 
         const formData = new FormData();
@@ -225,6 +213,7 @@
             }
         } catch (erro) {
             alert('Erro ao conectar com a API.');
+            console.error(erro);
         }
     }
 

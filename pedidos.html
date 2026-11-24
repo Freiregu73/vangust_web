@@ -89,23 +89,23 @@
         if (!tbody) return;
 
         tbody.innerHTML = pedidos.length ? pedidos.map(p => {
-            const itensStr = p.itens ? p.itens.map(i => `${i.quantidade}x ${i.nome_produto}`).join(', ') : 'Nenhum item';
+            const itensStr = p.itens ? p.itens.map(i => `${i.quantidade}x ${escaparHtml(i.nome_produto)}`).join(', ') : 'Nenhum item';
             
-            const obsHtml = p.observacao ? `<br><small style="color:#d9534f;"><i class="fa-solid fa-triangle-exclamation"></i> <b>Obs:</b> ${p.observacao}</small>` : '';
+            const obsHtml = p.observacao ? `<br><small style="color:#d9534f;"><i class="fa-solid fa-triangle-exclamation"></i> <b>Obs:</b> ${escaparHtml(p.observacao)}</small>` : '';
             
             let opcoesEntregadores = '<option value="">Sem entregador</option>';
             listaEntregadoresGlobal.forEach(e => {
                 const selecionado = e.id_entregador == p.id_entregador ? 'selected' : '';
-                opcoesEntregadores += `<option value="${e.id_entregador}" ${selecionado}>${e.nome}</option>`;
+                opcoesEntregadores += `<option value="${e.id_entregador}" ${selecionado}>${escaparHtml(e.nome)}</option>`;
             });
 
             return `
                 <tr>
                     <td><strong>#${p.id_pedido}</strong></td>
                     <td>
-                        <strong>${p.nome_cliente}</strong><br>
-                        <small style="color:#555;"><i class="fa-solid fa-location-dot" style="color:#e67e22;"></i> ${p.endereco_completo || 'Endereço não informado'}</small><br>
-                        <small style="color:#777;">Tel: ${p.telefone || 'Não informado'}</small>
+                        <strong>${escaparHtml(p.nome_cliente)}</strong><br>
+                        <small style="color:#555;"><i class="fa-solid fa-location-dot" style="color:#e67e22;"></i> ${escaparHtml(p.endereco_completo || 'Endereço não informado')}</small><br>
+                        <small style="color:#777;">Tel: ${escaparHtml(p.telefone || 'Não informado')}</small>
                     </td>
                     <td>
                         ${itensStr}
@@ -126,7 +126,7 @@
                             ${opcoesEntregadores}
                         </select>
                     </td>
-                    <td>${p.criado_em}</td>
+                    <td>${escaparHtml(p.criado_em)}</td>
                 </tr>
             `;
         }).join('') : `<tr><td colspan="7" style="text-align:center; padding: 20px;">Nenhum pedido encontrado para este filtro.</td></tr>`;

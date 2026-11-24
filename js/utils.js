@@ -31,3 +31,14 @@ function statusLabel(status) {
     };
     return mapa[status] || status;
 }
+
+
+// Escapa texto vindo do banco antes de colocá-lo em innerHTML (evita XSS).
+function escaparHtml(valor) {
+    return String(valor ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
