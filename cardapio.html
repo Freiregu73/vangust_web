@@ -30,7 +30,7 @@
                 <div class="table-wrap">
                     <table class="vg-table">
                         <thead>
-                            <tr><th>Produto</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Status</th><th></th></tr>
+                            <tr><th>Produto</th><th>Categoria</th><th>Preço</th><th>Disponibilidade</th><th></th></tr>
                         </thead>
                         <tbody id="tbodyProdutos"></tbody>
                     </table>
@@ -71,8 +71,11 @@
                 <input type="text" id="f_preco" placeholder="Ex: 29,90" required>
             </div>
             <div class="form-group">
-                <label>Estoque</label>
-                <input type="number" id="f_estoque" min="0" value="0" required>
+                <label>Disponibilidade</label>
+                <select id="f_disponivel">
+                    <option value="1">Disponível</option>
+                    <option value="0">Indisponível (some do app)</option>
+                </select>
             </div>
 
             <div class="modal-actions">
@@ -99,10 +102,10 @@
     // 1. Função para carregar os produtos reais da base de dados via API
     async function renderizarProdutos() {
         const tbody = document.getElementById('tbodyProdutos');
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">A carregar produtos...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Carregando produtos...</td></tr>';
 
         try {
-            const resposta = await fetch(API_BASE + 'produtos.php');
+            const resposta = await fetch(API_BASE + 'produtos.php?todos=1');
             const produtos = await resposta.json();
 
             tbody.innerHTML = produtos.length ? produtos.map(p => `
@@ -118,19 +121,22 @@
                     </td>
                     <td>${escaparHtml(p.categoria)}</td>
                     <td>R$ ${parseFloat(p.preco).toFixed(2).replace('.', ',')}</td>
-                    <td>Estoque web</td>
                     <td>
-                        <a href="#" class="badge badge-entregue">Ativo</a>
+                        <a href="#" class="badge ${Number(p.disponivel) === 0 ? 'badge-cancelado' : 'badge-entregue'}"
+                           title="Clique para alterar"
+                           onclick="alternarDisponibilidade(${p.id_produto}, ${Number(p.disponivel) === 0 ? 1 : 0}); return false;">
+                            ${Number(p.disponivel) === 0 ? 'Indisponível' : 'Disponível'}
+                        </a>
                     </td>
                     <td style="white-space:nowrap;">
                         <button class="btn btn-outline btn-sm" onclick="abrirModalEditar(${escaparHtml(JSON.stringify(p))})"><i class="fa-solid fa-pen"></i></button>
                         <button class="btn btn-danger btn-sm" onclick="excluirProduto(${p.id_produto})"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>
-            `).join('') : `<tr><td colspan="6" class="empty-state">Nenhum produto cadastrado ainda.</td></tr>`;
+            `).join('') : `<tr><td colspan="5" class="empty-state">Nenhum produto cadastrado ainda.</td></tr>`;
         } catch (erro) {
             console.error("Erro ao carregar produtos:", erro);
-            tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Erro ao ligar à base de dados. Verifique a ligação.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Erro ao conectar ao banco de dados. Verifique a conexão.</td></tr>`;
         }
     }
 
@@ -142,7 +148,7 @@
         document.getElementById('f_descricao').value = '';
         document.getElementById('f_categoria').value = '';
         document.getElementById('f_preco').value = '';
-        document.getElementById('f_estoque').value = 0;
+        document.getElementById('f_disponivel').value = '1';
         document.getElementById('modalProduto').classList.add('active');
     }
 
@@ -153,7 +159,29 @@
         document.getElementById('f_descricao').value = p.descricao;
         document.getElementById('f_categoria').value = p.categoria;
         document.getElementById('f_preco').value = String(p.preco).replace('.', ',');
+        document.getElementById('f_disponivel').value = Number(p.disponivel) === 0 ? '0' : '1';
         document.getElementById('modalProduto').classList.add('active');
+    }
+
+    // Clique na etiqueta: alterna Disponível/Indisponível sem abrir o formulário
+    async function alternarDisponibilidade(idProduto, novoValor) {
+        const formData = new FormData();
+        formData.append('id_produto', idProduto);
+        formData.append('disponivel', novoValor);
+        try {
+            const resposta = await fetch(API_BASE + 'alternar_disponibilidade.php', { method: 'POST', body: formData });
+            if (resposta.ok) {
+                if (typeof mostrarToast === 'function') {
+                    mostrarToast(novoValor === 1 ? 'Lanche disponível no app.' : 'Lanche escondido do app.');
+                }
+                renderizarProdutos();
+            } else {
+                alert('Não foi possível alterar a disponibilidade.');
+            }
+        } catch (erro) {
+            alert('Erro ao conectar com a API.');
+            console.error(erro);
+        }
     }
 
     function fecharModal() {
@@ -199,6 +227,7 @@
         formData.append('descricao', document.getElementById('f_descricao').value.trim());
         formData.append('categoria', document.getElementById('f_categoria').value.trim());
         formData.append('preco', preco);
+        formData.append('disponivel', document.getElementById('f_disponivel').value);
         
         const inputImagem = document.getElementById('f_imagem');
         if (inputImagem && inputImagem.files.length > 0) {
